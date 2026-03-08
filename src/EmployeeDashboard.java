@@ -50,6 +50,9 @@ public class EmployeeDashboard extends JFrame {
         // Load Leave Balance
         loadLeaveBalance();
 
+        // CHECK REJECTED LEAVE NOTIFICATIONS
+        checkNotifications();
+
         setVisible(true);
     }
 
@@ -69,13 +72,57 @@ public class EmployeeDashboard extends JFrame {
 
                 int balance = rs.getInt("leave_balance");
 
-                balanceLabel.setText("Remaining Leave Balance: " + balance);
+                if(balance >= 0){
 
-                // OPTIONAL PRO FEATURE (Color warning)
-                if (balance <= 3) {
+                    balanceLabel.setText("Remaining Leave Balance: " + balance);
+
+                    if (balance <= 3) {
+                        balanceLabel.setForeground(java.awt.Color.RED);
+                    } else {
+                        balanceLabel.setForeground(java.awt.Color.BLACK);
+                    }
+
+                } else {
+
+                    balanceLabel.setText("Leave Deficit: " + Math.abs(balance) + " days");
                     balanceLabel.setForeground(java.awt.Color.RED);
-                }
 
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // METHOD TO SHOW REJECTED LEAVE NOTIFICATION
+    void checkNotifications() {
+
+        try (Connection con = DB.getConnection()) {
+
+            PreparedStatement ps = con.prepareStatement(
+                    "SELECT id, from_date, to_date, reject_reason FROM leaves WHERE user_id=? AND status='Rejected' AND notified=false");
+
+            ps.setInt(1, userId);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                int leaveId = rs.getInt("id");
+                String from = rs.getString("from_date");
+                String to = rs.getString("to_date");
+                String reason = rs.getString("reject_reason");
+
+                JOptionPane.showMessageDialog(this,
+                        "Leave Request Update\n\nYour leave from " + from + " to " + to +
+                        " was rejected.\nReason: " + reason);
+
+                PreparedStatement update = con.prepareStatement(
+                        "UPDATE leaves SET notified=true WHERE id=?");
+
+                update.setInt(1, leaveId);
+                update.executeUpdate();
             }
 
         } catch (Exception e) {
@@ -83,4 +130,3 @@ public class EmployeeDashboard extends JFrame {
         }
     }
 }
- 

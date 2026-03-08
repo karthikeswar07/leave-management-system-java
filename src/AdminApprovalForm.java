@@ -1,126 +1,178 @@
 import javax.swing.*;
-import java.sql.*;
-import java.awt.*;
 import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.sql.*;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+
 public class AdminApprovalForm extends JFrame {
+
     JTable table;
     DefaultTableModel model;
 
-    public AdminApprovalForm() {
-        setTitle("Pending Leaves");
-        setSize(600, 400);
-        setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
+    JButton approveBtn, rejectBtn, refreshBtn;
 
-        model = new DefaultTableModel(new String[]{"Leave ID", "User ID", "From", "To", "Reason", "Status"}, 0);
+    public AdminApprovalForm() {
+
+        setTitle("Admin Leave Approval");
+        setSize(700,400);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        model = new DefaultTableModel();
         table = new JTable(model);
-        JScrollPane scrollPane = new JScrollPane(table);
-        add(scrollPane, BorderLayout.CENTER);
+
+        model.setColumnIdentifiers(new String[]{
+                "Leave ID","User ID","From Date","To Date","Reason","Status"
+        });
+
+        JScrollPane pane = new JScrollPane(table);
+
+        approveBtn = new JButton("Approve");
+        rejectBtn = new JButton("Reject");
+        refreshBtn = new JButton("Refresh");
 
         JPanel bottom = new JPanel();
-        JTextField idField = new JTextField(5);
-        JButton approveBtn = new JButton("Approve");
-        JButton rejectBtn = new JButton("Reject");
-        JButton refreshBtn = new JButton("Refresh");
 
-        bottom.add(new JLabel("Leave ID:"));
-        bottom.add(idField);
         bottom.add(approveBtn);
         bottom.add(rejectBtn);
         bottom.add(refreshBtn);
-        add(bottom, BorderLayout.SOUTH);
 
-        approveBtn.addActionListener(e -> updateStatus(idField.getText(), "Approved"));
-        rejectBtn.addActionListener(e -> updateStatus(idField.getText(), "Rejected"));
+        add(pane,BorderLayout.CENTER);
+        add(bottom,BorderLayout.SOUTH);
+
+        approveBtn.addActionListener(e -> approveLeave());
+        rejectBtn.addActionListener(e -> rejectLeave());
         refreshBtn.addActionListener(e -> loadLeaves());
 
         loadLeaves();
-        setVisible(true);
     }
 
-    void loadLeaves() {
+    void loadLeaves(){
+
         model.setRowCount(0);
-        try (Connection con = DB.getConnection()) {
-            PreparedStatement ps = con.prepareStatement("SELECT * FROM leaves WHERE status='Pending'");
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
+
+        try(Connection con = DB.getConnection()){
+
+            Statement st = con.createStatement();
+
+            ResultSet rs = st.executeQuery(
+                    "SELECT id,user_id,from_date,to_date,reason,status FROM leaves WHERE status='Pending'"
+            );
+
+            while(rs.next()){
+
                 model.addRow(new Object[]{
-                    rs.getInt("id"),
-                    rs.getInt("user_id"),
-                    rs.getString("from_date"),
-                    rs.getString("to_date"),
-                    rs.getString("reason"),
-                    rs.getString("status")
+                        rs.getInt("id"),
+                        rs.getInt("user_id"),
+                        rs.getDate("from_date"),
+                        rs.getDate("to_date"),
+                        rs.getString("reason"),
+                        rs.getString("status")
                 });
+
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+
+        }catch(Exception e){
+            e.printStackTrace();
         }
+
     }
 
-    void updateStatus(String id, String status) {
-        if (id.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter Leave ID.");
+    void approveLeave(){
+
+        int row = table.getSelectedRow();
+
+        if(row == -1){
+            JOptionPane.showMessageDialog(this,"Please select a leave request");
             return;
         }
 
-        try (Connection con = DB.getConnection()) {
+        int leaveId = (int) model.getValueAt(row,0);
 
-            int leaveId = Integer.parseInt(id);
+        try(Connection con = DB.getConnection()){
 
-            // STEP 1: If approving, reduce leave balance
-            if(status.equals("Approved")) {
+            PreparedStatement getLeave = con.prepareStatement(
+                    "SELECT user_id, from_date, to_date FROM leaves WHERE id=?"
+            );
 
-                // Get leave details
-                PreparedStatement getLeave = con.prepareStatement(
-                    "SELECT user_id, from_date, to_date FROM leaves WHERE id=?");
+            getLeave.setInt(1,leaveId);
 
-                getLeave.setInt(1, leaveId);
+            ResultSet rs = getLeave.executeQuery();
 
-                ResultSet rs = getLeave.executeQuery();
+            if(rs.next()){
 
-                if(rs.next()) {
+                int userId = rs.getInt("user_id");
 
-                    int userId = rs.getInt("user_id");
-                    String from = rs.getString("from_date");
-                    String to = rs.getString("to_date");
+                LocalDate from = rs.getDate("from_date").toLocalDate();
+                LocalDate to = rs.getDate("to_date").toLocalDate();
 
-                    // Calculate number of leave days
-                    java.time.LocalDate fromD = java.time.LocalDate.parse(from);
-                    java.time.LocalDate toD = java.time.LocalDate.parse(to);
+                long days = ChronoUnit.DAYS.between(from,to) + 1;
 
-                    long leaveDays = java.time.temporal.ChronoUnit.DAYS.between(fromD, toD) + 1;
+                PreparedStatement reduceBalance = con.prepareStatement(
+                        "UPDATE users SET leave_balance = leave_balance - ? WHERE id=?"
+                );
 
-                    // Reduce leave balance
-                    PreparedStatement reduceBalance = con.prepareStatement(
-                        "UPDATE users SET leave_balance = leave_balance - ? WHERE id=?");
+                reduceBalance.setLong(1,days);
+                reduceBalance.setInt(2,userId);
 
-                    reduceBalance.setLong(1, leaveDays);
-                    reduceBalance.setInt(2, userId);
-
-                    reduceBalance.executeUpdate();
-                }
+                reduceBalance.executeUpdate();
             }
 
-            // STEP 2: Update leave status
             PreparedStatement ps = con.prepareStatement(
-                "UPDATE leaves SET status=? WHERE id=?");
+                    "UPDATE leaves SET status='Approved', reject_reason=NULL WHERE id=?"
+            );
 
-            ps.setString(1, status);
-            ps.setInt(2, leaveId);
+            ps.setInt(1,leaveId);
 
-            int updated = ps.executeUpdate();
+            ps.executeUpdate();
 
-            if (updated > 0) {
-                JOptionPane.showMessageDialog(this, "Leave " + status);
-                loadLeaves();
-            } else {
-                JOptionPane.showMessageDialog(this, "Invalid Leave ID");
-            }
+            JOptionPane.showMessageDialog(this,"Leave Approved");
 
-        } catch (Exception e) {
+            loadLeaves();
+
+        }catch(Exception e){
             e.printStackTrace();
         }
+
     }
 
+    void rejectLeave(){
+
+        int row = table.getSelectedRow();
+
+        if(row == -1){
+            JOptionPane.showMessageDialog(this,"Please select a leave request");
+            return;
+        }
+
+        int leaveId = (int) model.getValueAt(row,0);
+
+        String reason = JOptionPane.showInputDialog(this,"Enter rejection reason:");
+
+        if(reason == null || reason.trim().isEmpty()){
+            JOptionPane.showMessageDialog(this,"Rejection reason required");
+            return;
+        }
+
+        try(Connection con = DB.getConnection()){
+
+            PreparedStatement ps = con.prepareStatement(
+                    "UPDATE leaves SET status='Rejected', reject_reason=? WHERE id=?"
+            );
+
+            ps.setString(1,reason);
+            ps.setInt(2,leaveId);
+
+            ps.executeUpdate();
+
+            JOptionPane.showMessageDialog(this,"Leave Rejected");
+
+            loadLeaves();
+
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
+    }
 }

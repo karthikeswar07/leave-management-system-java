@@ -18,22 +18,20 @@ public class AdminDashboard extends JFrame {
         JButton viewSpecificHistoryBtn = new JButton("View Employee Leave History");
         JButton logoutBtn = new JButton("Logout");
 
-        // Button actions
-        approveBtn.addActionListener(e -> new AdminApprovalForm());
-        viewAllHistoryBtn.addActionListener(e -> new AllLeaveHistoryForm());
-        viewSpecificHistoryBtn.addActionListener(e -> new SearchEmployeeLeaveForm());
+        approveBtn.addActionListener(e -> new AdminApprovalForm().setVisible(true));
+        viewAllHistoryBtn.addActionListener(e -> new AllLeaveHistoryForm().setVisible(true));
+        viewSpecificHistoryBtn.addActionListener(e -> new SearchEmployeeLeaveForm().setVisible(true));
+
         logoutBtn.addActionListener(e -> {
             this.dispose();
             new LoginForm();
         });
 
-        // Set bounds - in correct visual order
         approveBtn.setBounds(100, 70, 200, 30);
         viewAllHistoryBtn.setBounds(100, 120, 200, 30);
         viewSpecificHistoryBtn.setBounds(100, 170, 200, 30);
-        logoutBtn.setBounds(100, 220, 200, 30);  // placed at last visually
+        logoutBtn.setBounds(100, 220, 200, 30);
 
-        // Add buttons
         add(approveBtn);
         add(viewAllHistoryBtn);
         add(viewSpecificHistoryBtn);
