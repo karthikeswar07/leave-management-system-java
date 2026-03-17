@@ -1,41 +1,66 @@
 import javax.swing.*;
+import java.awt.*;
 
-public class AdminDashboard extends JFrame {
+public class AdminDashboard extends GlassFrame {
 
     public AdminDashboard() {
-        setTitle("Admin Dashboard");
-        setSize(400, 350);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setLayout(null);
 
-        JLabel label = new JLabel("Welcome Admin");
-        label.setBounds(130, 20, 200, 30);
-        add(label);
+        super("Admin Dashboard", 450, 350, "src/images/bg.jpg");
+
+        mainPanel.setLayout(new GridLayout(5,1,10,10));
+
+        JLabel label = new JLabel("Welcome Admin", JLabel.CENTER);
+        label.setFont(new Font("Arial", Font.BOLD, 18));
 
         JButton approveBtn = new JButton("Pending Leave Approval");
         JButton viewAllHistoryBtn = new JButton("View All Leave History");
         JButton viewSpecificHistoryBtn = new JButton("View Employee Leave History");
         JButton logoutBtn = new JButton("Logout");
 
-        approveBtn.addActionListener(e -> new AdminApprovalForm().setVisible(true));
-        viewAllHistoryBtn.addActionListener(e -> new AllLeaveHistoryForm().setVisible(true));
-        viewSpecificHistoryBtn.addActionListener(e -> new SearchEmployeeLeaveForm().setVisible(true));
+        JPanel buttonPanel1 = new JPanel();
+        buttonPanel1.setOpaque(false);
+        buttonPanel1.add(approveBtn);
+
+        JPanel buttonPanel2 = new JPanel();
+        buttonPanel2.setOpaque(false);
+        buttonPanel2.add(viewAllHistoryBtn);
+
+        JPanel buttonPanel3 = new JPanel();
+        buttonPanel3.setOpaque(false);
+        buttonPanel3.add(viewSpecificHistoryBtn);
+
+        JPanel buttonPanel4 = new JPanel();
+        buttonPanel4.setOpaque(false);
+        buttonPanel4.add(logoutBtn);
+
+        mainPanel.add(label);
+        mainPanel.add(buttonPanel1);
+        mainPanel.add(buttonPanel2);
+        mainPanel.add(buttonPanel3);
+        mainPanel.add(buttonPanel4);
+
+        // OPEN ADMIN APPROVAL SCREEN
+        approveBtn.addActionListener(e -> {
+            this.setVisible(false);
+            new AdminApprovalForm(this);
+        });
+
+        // OPEN ALL LEAVE HISTORY
+        viewAllHistoryBtn.addActionListener(e -> {
+            this.setVisible(false);
+            new AllLeaveHistoryForm(this);
+        });
+
+        // OPEN SEARCH EMPLOYEE HISTORY
+        viewSpecificHistoryBtn.addActionListener(e -> {
+            this.setVisible(false);
+            new SearchEmployeeLeaveForm(this);
+        });
 
         logoutBtn.addActionListener(e -> {
             this.dispose();
             new LoginForm();
         });
-
-        approveBtn.setBounds(100, 70, 200, 30);
-        viewAllHistoryBtn.setBounds(100, 120, 200, 30);
-        viewSpecificHistoryBtn.setBounds(100, 170, 200, 30);
-        logoutBtn.setBounds(100, 220, 200, 30);
-
-        add(approveBtn);
-        add(viewAllHistoryBtn);
-        add(viewSpecificHistoryBtn);
-        add(logoutBtn);
 
         setVisible(true);
     }

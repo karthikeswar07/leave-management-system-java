@@ -4,20 +4,22 @@ import java.awt.*;
 import javax.swing.table.DefaultTableModel;
 import java.time.LocalDate;
 
-public class LeaveHistoryForm extends JFrame {
+public class LeaveHistoryForm extends GlassFrame {
 
     JTable table;
     DefaultTableModel model;
     int userId;
 
-    public LeaveHistoryForm(int userId) {
+    JFrame previousFrame;
+
+    public LeaveHistoryForm(int userId, JFrame previousFrame) {
+
+        super("Leave History", 750, 420, "src/images/bg.jpg");
 
         this.userId = userId;
+        this.previousFrame = previousFrame;
 
-        setTitle("Leave History");
-        setSize(700,350);
-        setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
+        mainPanel.setLayout(new BorderLayout(10,10));
 
         String[] cols = {"ID","From","To","Reason","Status","Reject Reason"};
 
@@ -28,20 +30,34 @@ public class LeaveHistoryForm extends JFrame {
                 return false;
             }
         };
+        table.getColumnModel().getColumn(4).setCellRenderer(new StatusCellRenderer());
 
         table.setRowHeight(25);
 
         JScrollPane scroll = new JScrollPane(table);
-        add(scroll,BorderLayout.CENTER);
 
         JButton cancelBtn = new JButton("Cancel Selected Leave");
+        JButton backBtn = new JButton("Back");
 
         JPanel bottom = new JPanel();
-        bottom.add(cancelBtn);
+        bottom.setOpaque(false);
 
-        add(bottom,BorderLayout.SOUTH);
+        bottom.add(cancelBtn);
+        bottom.add(backBtn);
+
+        mainPanel.add(scroll,BorderLayout.CENTER);
+        mainPanel.add(bottom,BorderLayout.SOUTH);
 
         cancelBtn.addActionListener(e -> cancelLeave());
+
+        // BACK BUTTON
+        backBtn.addActionListener(e -> {
+
+            this.dispose();
+
+            previousFrame.setVisible(true);
+
+        });
 
         loadLeaves();
 

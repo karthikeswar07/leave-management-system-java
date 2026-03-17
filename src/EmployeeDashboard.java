@@ -1,56 +1,65 @@
 import javax.swing.*;
+import java.awt.*;
 import java.sql.*;
 
-public class EmployeeDashboard extends JFrame {
+public class EmployeeDashboard extends GlassFrame {
 
     int userId;
     JLabel balanceLabel = new JLabel();
 
     public EmployeeDashboard(int userId) {
 
+        super("Employee Dashboard", 420, 320, "src/images/bg.jpg");
+
         this.userId = userId;
 
-        setTitle("Employee Dashboard");
-        setSize(400, 300);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setLayout(null);
+        mainPanel.setLayout(new GridLayout(5,1,10,10));
 
-        // Welcome Label
-        JLabel welcome = new JLabel("Welcome Employee ID: " + userId);
-        welcome.setBounds(30, 10, 300, 20);
-        add(welcome);
+        JLabel welcome = new JLabel("Welcome Employee ID: " + userId, SwingConstants.CENTER);
+        welcome.setFont(new Font("Arial", Font.BOLD, 16));
 
-        // Leave Balance Label
-        balanceLabel.setBounds(30, 30, 300, 20);
-        add(balanceLabel);
+        balanceLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        // Buttons
         JButton applyLeaveBtn = new JButton("Apply for Leave");
         JButton viewHistoryBtn = new JButton("View Leave History");
         JButton logoutBtn = new JButton("Logout");
 
-        applyLeaveBtn.setBounds(100, 70, 180, 30);
-        viewHistoryBtn.setBounds(100, 120, 180, 30);
-        logoutBtn.setBounds(100, 170, 180, 30);
+        JPanel btn1 = new JPanel();
+        btn1.setOpaque(false);
+        btn1.add(applyLeaveBtn);
 
-        // Button Actions
-        applyLeaveBtn.addActionListener(e -> new ApplyLeaveForm(userId));
-        viewHistoryBtn.addActionListener(e -> new LeaveHistoryForm(userId));
+        JPanel btn2 = new JPanel();
+        btn2.setOpaque(false);
+        btn2.add(viewHistoryBtn);
+
+        JPanel btn3 = new JPanel();
+        btn3.setOpaque(false);
+        btn3.add(logoutBtn);
+
+        mainPanel.add(welcome);
+        mainPanel.add(balanceLabel);
+        mainPanel.add(btn1);
+        mainPanel.add(btn2);
+        mainPanel.add(btn3);
+
+        // OPEN APPLY LEAVE SCREEN
+        applyLeaveBtn.addActionListener(e -> {
+            this.setVisible(false);   // hide dashboard
+            new ApplyLeaveForm(userId, this); // pass dashboard reference
+        });
+
+        // OPEN LEAVE HISTORY SCREEN
+        viewHistoryBtn.addActionListener(e -> {
+            this.setVisible(false);   // hide dashboard
+            new LeaveHistoryForm(userId, this); // pass dashboard reference
+        });
 
         logoutBtn.addActionListener(e -> {
             this.dispose();
             new LoginForm();
         });
 
-        add(applyLeaveBtn);
-        add(viewHistoryBtn);
-        add(logoutBtn);
-
-        // Load Leave Balance
         loadLeaveBalance();
-
-        // CHECK REJECTED LEAVE NOTIFICATIONS
         checkNotifications();
 
         setVisible(true);
@@ -77,15 +86,15 @@ public class EmployeeDashboard extends JFrame {
                     balanceLabel.setText("Remaining Leave Balance: " + balance);
 
                     if (balance <= 3) {
-                        balanceLabel.setForeground(java.awt.Color.RED);
+                        balanceLabel.setForeground(Color.RED);
                     } else {
-                        balanceLabel.setForeground(java.awt.Color.BLACK);
+                        balanceLabel.setForeground(Color.BLACK);
                     }
 
                 } else {
 
                     balanceLabel.setText("Leave Deficit: " + Math.abs(balance) + " days");
-                    balanceLabel.setForeground(java.awt.Color.RED);
+                    balanceLabel.setForeground(Color.RED);
 
                 }
             }

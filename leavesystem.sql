@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 07, 2026 at 09:29 AM
+-- Generation Time: Mar 17, 2026 at 03:43 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -71,15 +71,7 @@ CREATE TABLE `leaves` (
 --
 
 INSERT INTO `leaves` (`id`, `user_id`, `from_date`, `to_date`, `reason`, `status`, `reject_reason`, `notified`) VALUES
-(1, 2, '2026-02-12', '2026-02-15', 'Brother\'s marriage', 'Approved', NULL, 0),
-(2, 3, '2026-02-12', '2026-02-20', 'fever', 'Rejected', NULL, 0),
-(3, 2, '2026-02-12', '2026-02-14', 'sick leave', 'Approved', NULL, 0),
-(4, 3, '2026-02-12', '2026-02-14', 'fever', 'Approved', NULL, 0),
-(5, 2, '2026-02-23', '2026-02-25', 'gradpa death', 'Rejected', NULL, 1),
-(6, 2, '2026-03-04', '2026-03-06', 'fever', 'Approved', NULL, 0),
-(7, 2, '2026-03-05', '2026-03-05', 'nrml', 'Rejected', 'many leaves', 1),
-(8, 2, '2026-03-06', '2026-03-06', 'aappap', 'Cancelled', NULL, 0),
-(9, 2, '2026-04-06', '2026-04-10', 'xyz', 'Approved', NULL, 0);
+(1, 2, '2026-03-05', '2026-03-07', 'marriage', 'Pending', NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -101,8 +93,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `username`, `password`, `role`, `leave_balance`) VALUES
 (1, 'admin', 'admin', 'Admin', 10),
-(2, 'employee', 'employee', 'Employee', -1),
-(3, 'teja', '123', 'Employee', 7);
+(2, 'employee1', 'employee1', 'Employee', 10);
 
 --
 -- Indexes for dumped tables
@@ -141,13 +132,13 @@ ALTER TABLE `holidays`
 -- AUTO_INCREMENT for table `leaves`
 --
 ALTER TABLE `leaves`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Constraints for dumped tables

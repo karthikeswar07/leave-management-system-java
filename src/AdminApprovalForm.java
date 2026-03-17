@@ -5,47 +5,67 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
-public class AdminApprovalForm extends JFrame {
+public class AdminApprovalForm extends GlassFrame {
 
     JTable table;
     DefaultTableModel model;
 
-    JButton approveBtn, rejectBtn, refreshBtn;
+    JButton approveBtn, rejectBtn, refreshBtn, backBtn;
 
-    public AdminApprovalForm() {
+    JFrame previousFrame;
 
-        setTitle("Admin Leave Approval");
-        setSize(700,400);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+    public AdminApprovalForm(JFrame previousFrame) {
+
+        super("Admin Leave Approval", 800, 450, "src/images/bg.jpg");
+
+        this.previousFrame = previousFrame;
+
+        mainPanel.setLayout(new BorderLayout(10,10));
 
         model = new DefaultTableModel();
         table = new JTable(model);
+       
 
         model.setColumnIdentifiers(new String[]{
                 "Leave ID","User ID","From Date","To Date","Reason","Status"
         });
 
+        table.setRowHeight(25);
+        table.getColumnModel().getColumn(5).setCellRenderer(new StatusCellRenderer());
         JScrollPane pane = new JScrollPane(table);
 
         approveBtn = new JButton("Approve");
         rejectBtn = new JButton("Reject");
         refreshBtn = new JButton("Refresh");
+        backBtn = new JButton("Back");
 
         JPanel bottom = new JPanel();
+        bottom.setOpaque(false);
 
         bottom.add(approveBtn);
         bottom.add(rejectBtn);
         bottom.add(refreshBtn);
+        bottom.add(backBtn);
 
-        add(pane,BorderLayout.CENTER);
-        add(bottom,BorderLayout.SOUTH);
+        mainPanel.add(pane, BorderLayout.CENTER);
+        mainPanel.add(bottom, BorderLayout.SOUTH);
 
         approveBtn.addActionListener(e -> approveLeave());
         rejectBtn.addActionListener(e -> rejectLeave());
         refreshBtn.addActionListener(e -> loadLeaves());
 
+        // BACK BUTTON
+        backBtn.addActionListener(e -> {
+
+            this.dispose();
+
+            previousFrame.setVisible(true);
+
+        });
+
         loadLeaves();
+
+        setVisible(true);
     }
 
     void loadLeaves(){
@@ -76,7 +96,6 @@ public class AdminApprovalForm extends JFrame {
         }catch(Exception e){
             e.printStackTrace();
         }
-
     }
 
     void approveLeave(){
@@ -134,7 +153,6 @@ public class AdminApprovalForm extends JFrame {
         }catch(Exception e){
             e.printStackTrace();
         }
-
     }
 
     void rejectLeave(){
@@ -173,6 +191,5 @@ public class AdminApprovalForm extends JFrame {
         }catch(Exception e){
             e.printStackTrace();
         }
-
     }
 }

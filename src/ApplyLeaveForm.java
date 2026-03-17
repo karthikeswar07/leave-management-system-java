@@ -1,7 +1,8 @@
 import javax.swing.*;
+import java.awt.*;
 import java.sql.*;
 
-public class ApplyLeaveForm extends JFrame {
+public class ApplyLeaveForm extends GlassFrame {
 
     JTextField fromDate = new JTextField();
     JTextField toDate = new JTextField();
@@ -9,28 +10,83 @@ public class ApplyLeaveForm extends JFrame {
 
     JButton submitBtn = new JButton("Submit");
     JButton viewHolidayBtn = new JButton("View Holidays");
+    JButton backBtn = new JButton("Back");
 
-    public ApplyLeaveForm(int userId) {
+    JFrame previousFrame;
+    int userId;
 
-        setTitle("Apply for Leave");
-        setSize(350, 330);
-        setLayout(null);
-        setLocationRelativeTo(null);
+    public ApplyLeaveForm(int userId, JFrame previousFrame) {
 
-        add(new JLabel("From Date (YYYY-MM-DD):")).setBounds(20, 20, 200, 20);
-        add(fromDate).setBounds(180, 20, 120, 20);
+        super("Apply for Leave", 500, 380, "src/images/bg.jpg");
 
-        add(new JLabel("To Date (YYYY-MM-DD):")).setBounds(20, 60, 200, 20);
-        add(toDate).setBounds(180, 60, 120, 20);
+        this.previousFrame = previousFrame;
+        this.userId = userId;
 
-        add(new JLabel("Reason:")).setBounds(20, 100, 80, 20);
-        add(reasonArea).setBounds(100, 100, 200, 80);
+        mainPanel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
 
-        add(submitBtn).setBounds(50, 210, 100, 30);
-        add(viewHolidayBtn).setBounds(170, 210, 120, 30);
+        gbc.insets = new Insets(10,10,10,10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        JLabel title = new JLabel("Apply Leave Form", JLabel.CENTER);
+        title.setFont(new Font("Arial", Font.BOLD, 18));
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        mainPanel.add(title, gbc);
+
+        gbc.gridwidth = 1;
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        mainPanel.add(new JLabel("From Date (YYYY-MM-DD):"), gbc);
+
+        gbc.gridx = 1;
+        mainPanel.add(fromDate, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        mainPanel.add(new JLabel("To Date (YYYY-MM-DD):"), gbc);
+
+        gbc.gridx = 1;
+        mainPanel.add(toDate, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        mainPanel.add(new JLabel("Reason:"), gbc);
+
+        gbc.gridx = 1;
+        reasonArea.setRows(3);
+        JScrollPane scroll = new JScrollPane(reasonArea);
+        mainPanel.add(scroll, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        mainPanel.add(submitBtn, gbc);
+
+        gbc.gridx = 1;
+        mainPanel.add(viewHolidayBtn, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 5;
+        gbc.gridwidth = 2;
+        mainPanel.add(backBtn, gbc);
 
         // VIEW HOLIDAYS WINDOW
         viewHolidayBtn.addActionListener(e -> new HolidayListForm());
+
+        // BACK BUTTON
+        backBtn.addActionListener(e -> {
+
+            this.dispose();
+
+            if(previousFrame instanceof EmployeeDashboard){
+                ((EmployeeDashboard) previousFrame).loadLeaveBalance();
+            }
+
+            previousFrame.setVisible(true);
+        });
 
         submitBtn.addActionListener(e -> {
 
@@ -39,14 +95,12 @@ public class ApplyLeaveForm extends JFrame {
                 String from = fromDate.getText().trim();
                 String to = toDate.getText().trim();
 
-                // Convert to LocalDate
                 java.time.LocalDate fromD = java.time.LocalDate.parse(from);
                 java.time.LocalDate toD = java.time.LocalDate.parse(to);
 
                 long requestedDays =
                         java.time.temporal.ChronoUnit.DAYS.between(fromD, toD) + 1;
 
-                // CHECK OVERLAPPING LEAVES
                 PreparedStatement overlapCheck = con.prepareStatement(
                         "SELECT * FROM leaves WHERE user_id=? AND status IN ('Pending','Approved') " +
                         "AND ((? BETWEEN from_date AND to_date) OR (? BETWEEN from_date AND to_date) OR (from_date BETWEEN ? AND ?))");
@@ -67,7 +121,6 @@ public class ApplyLeaveForm extends JFrame {
                     return;
                 }
 
-                // CHECK LEAVE BALANCE
                 PreparedStatement checkBalance = con.prepareStatement(
                         "SELECT leave_balance FROM users WHERE id=?");
 
@@ -79,14 +132,13 @@ public class ApplyLeaveForm extends JFrame {
 
                     int balance = rs.getInt("leave_balance");
 
-                    // WARNING IF LEAVE EXCEEDS BALANCE
                     if (requestedDays > balance) {
 
                         int confirm = JOptionPane.showConfirmDialog(
                                 this,
                                 "Requested leave exceeds your balance by "
                                         + (requestedDays - balance) +
-                                        " days.\n\nDo you want to continue and send request to admin?",
+                                        " days.\n\nDo you want to continue?",
                                 "Leave Balance Warning",
                                 JOptionPane.YES_NO_OPTION);
 
@@ -96,7 +148,6 @@ public class ApplyLeaveForm extends JFrame {
                     }
                 }
 
-                // INSERT LEAVE REQUEST
                 PreparedStatement ps = con.prepareStatement(
                         "INSERT INTO leaves(user_id, from_date, to_date, reason) VALUES(?, ?, ?, ?)");
 
@@ -112,15 +163,19 @@ public class ApplyLeaveForm extends JFrame {
 
                 this.dispose();
 
+                if(previousFrame instanceof EmployeeDashboard){
+                    ((EmployeeDashboard) previousFrame).loadLeaveBalance();
+                }
+
+                previousFrame.setVisible(true);
+
             } catch (Exception ex) {
 
                 ex.printStackTrace();
 
                 JOptionPane.showMessageDialog(this,
                         "Error submitting leave request.");
-
             }
-
         });
 
         setVisible(true);

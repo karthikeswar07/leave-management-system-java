@@ -2,100 +2,122 @@ import javax.swing.*;
 import java.awt.*;
 import java.sql.*;
 
-public class RegisterForm extends JFrame {
+public class RegisterForm extends GlassFrame {
+
     JTextField usernameField = new JTextField();
     JPasswordField passwordField = new JPasswordField();
     JComboBox<String> roleBox = new JComboBox<>(new String[]{"Employee", "Admin"});
     JButton registerBtn = new JButton("Register");
     JButton backToLoginBtn = new JButton("Back to Login");
 
-    public RegisterForm() {
-        setTitle("User Registration");
-        setSize(400, 300);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLayout(null);
+    JFrame previousFrame;
+
+    public RegisterForm(JFrame previousFrame) {
+
+        super("User Registration", 450, 320, "src/images/bg.jpg");
+
+        this.previousFrame = previousFrame;
+
+        mainPanel.setLayout(new GridLayout(6,1,10,10));
 
         JLabel title = new JLabel("Register Account", JLabel.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 18));
-        title.setBounds(100, 10, 200, 30);
-        add(title);
 
-        JLabel userLabel = new JLabel("Username:");
-        userLabel.setBounds(50, 60, 100, 25);
-        add(userLabel);
-        usernameField.setBounds(150, 60, 180, 25);
-        add(usernameField);
+        JPanel userPanel = new JPanel(new BorderLayout());
+        userPanel.setOpaque(false);
+        userPanel.add(new JLabel("Username:"), BorderLayout.WEST);
+        userPanel.add(usernameField, BorderLayout.CENTER);
 
-        JLabel passLabel = new JLabel("Password:");
-        passLabel.setBounds(50, 100, 100, 25);
-        add(passLabel);
-        passwordField.setBounds(150, 100, 180, 25);
-        add(passwordField);
+        JPanel passPanel = new JPanel(new BorderLayout());
+        passPanel.setOpaque(false);
+        passPanel.add(new JLabel("Password:"), BorderLayout.WEST);
+        passPanel.add(passwordField, BorderLayout.CENTER);
 
-        JLabel roleLabel = new JLabel("Role:");
-        roleLabel.setBounds(50, 140, 100, 25);
-        add(roleLabel);
-        roleBox.setBounds(150, 140, 180, 25);
-        add(roleBox);
+        JPanel rolePanel = new JPanel(new BorderLayout());
+        rolePanel.setOpaque(false);
+        rolePanel.add(new JLabel("Role:"), BorderLayout.WEST);
+        rolePanel.add(roleBox, BorderLayout.CENTER);
 
-        registerBtn.setBounds(80, 190, 110, 30);
-        backToLoginBtn.setBounds(210, 190, 110, 30);
-        add(registerBtn);
-        add(backToLoginBtn);
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setOpaque(false);
+        buttonPanel.add(registerBtn);
+        buttonPanel.add(backToLoginBtn);
+
+        mainPanel.add(title);
+        mainPanel.add(userPanel);
+        mainPanel.add(passPanel);
+        mainPanel.add(rolePanel);
+        mainPanel.add(new JLabel());
+        mainPanel.add(buttonPanel);
 
         registerBtn.addActionListener(e -> registerUser());
+
         backToLoginBtn.addActionListener(e -> {
             this.dispose();
-            new LoginForm();
+            previousFrame.setVisible(true);
         });
 
         setVisible(true);
     }
 
     private void registerUser() {
+
         String username = usernameField.getText().trim();
         String password = new String(passwordField.getPassword()).trim();
         String role = roleBox.getSelectedItem().toString();
 
         if (username.isEmpty() || password.isEmpty()) {
+
             JOptionPane.showMessageDialog(this,
-                "Username and password cannot be empty.",
-                "Input Error",
-                JOptionPane.WARNING_MESSAGE);
+                    "Username and password cannot be empty.",
+                    "Input Error",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         try (Connection con = DB.getConnection()) {
-            // Check for duplicate username
-            PreparedStatement check = con.prepareStatement("SELECT * FROM users WHERE username=?");
+
+            PreparedStatement check = con.prepareStatement(
+                    "SELECT * FROM users WHERE username=?");
+
             check.setString(1, username);
+
             ResultSet rs = check.executeQuery();
+
             if (rs.next()) {
+
                 JOptionPane.showMessageDialog(this,
-                    "Username already exists. Please choose another.",
-                    "Duplicate Username",
-                    JOptionPane.ERROR_MESSAGE);
+                        "Username already exists. Please choose another.",
+                        "Duplicate Username",
+                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // Insert new user
-            PreparedStatement ps = con.prepareStatement("INSERT INTO users(username, password, role) VALUES(?, ?, ?)");
+            PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO users(username, password, role) VALUES(?, ?, ?)");
+
             ps.setString(1, username);
             ps.setString(2, password);
             ps.setString(3, role);
+
             ps.executeUpdate();
 
-            JOptionPane.showMessageDialog(this, "Registration successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Registration successful!",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
+
             this.dispose();
-            new LoginForm();
+            previousFrame.setVisible(true);
 
         } catch (Exception ex) {
+
             ex.printStackTrace();
+
             JOptionPane.showMessageDialog(this,
-                "Error during registration:\n" + ex.getMessage(),
-                "Registration Error",
-                JOptionPane.ERROR_MESSAGE);
+                    "Error during registration:\n" + ex.getMessage(),
+                    "Registration Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 }
